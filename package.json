@@ -1,0 +1,19 @@
+{
+  "name": "t9-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "evsWorld <evanlhendrix@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "start": "./node_modules/.bin/nodemon server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.16.2",
+    "fs": "0.0.1-security",
+    "mongoose": "^5.0.6",
+    "nodemon": "^1.17.5",
+    "path": "^0.12.7"
+  }
+}
