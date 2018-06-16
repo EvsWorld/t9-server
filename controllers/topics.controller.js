@@ -8,13 +8,13 @@ const dictFile = path.join(__dirname,'../data/dict.txt')
 // module.exports = {
 //
 // }
-const t9 = {};
 
-t9.dictionary = '';
-t9.dictionaryTree = {};
-t9.words = [];
-// debugger;
-t9.keyMap = {
+let gT = {};
+
+  gT.dictionary = '';
+  gT.dictionaryTree = {};
+  gT.words = [];
+  gT.keyMap = {
     2: 'abc',
     3: 'def',
     4: 'ghi',
@@ -23,7 +23,8 @@ t9.keyMap = {
     7: 'pqrs',
     8: 'tuv',
     9: 'wxyz'
-};
+  };
+
 
 function Word(word, occurrences) {
     this.word = word;
@@ -34,14 +35,20 @@ Word.prototype.toString = function () {
     return this.word + ' (' + this.occurrences + ')';
 };
 
-// Function to build the arbol. This is called once
-function buildTree (wordsArray) {
+/**
+ * Function to build the arbol. Called once
+ * @param  {string} dictionary string of words from parsed dict
+ * @return {null}            [description]
+ */
+function buildTree (dictionary) {
     // console.log(`initializing dictionary. 'dictionary' = `, dictionary);
+    gT.dictionary = dictionary
+    gT.words = dictionary.split(/\s+/g);
 
     var tree = {}; // internal tree variable object
 
     // https://github.com/jrolfs/javascript-trie-predict/blob/master/predict.js
-    wordsArray.forEach(function (word) {
+    gT.words.forEach(function (word) {
         // 'letters' is an array of letters
         var letters = word.split('');
         var leaf = tree;
@@ -77,7 +84,7 @@ function buildTree (wordsArray) {
                     leaf[letter].$ = 1;
                 }
 
-            // Just keep going
+            // Just keep going (here we're reassigning the 'leaf' to be the next letter of the very leaf we're on)
             } else {
                 leaf = leaf[letter];
             }
@@ -85,20 +92,37 @@ function buildTree (wordsArray) {
 
     });
 
-    t9.dictionaryTree = tree;
+    gT.dictionaryTree = tree;
 
-};
-
-t9.predict = function(numericInput) {
+/**
+ * [predict description]
+ * @param  {integer} numericInput    user input digits
+ * @return {array}         array of all possible inteded words
+ */
+gT.predict = (numericInput) => {
+        // console.log(`gT.predict called!!`);
+        // console.log(`predict 'numericInput' = `, numericInput);
         var input = new String(numericInput);
-        var results = t9.findWords(numericInput, t9.dictionaryTree, true);
-
+        // console.log(`predict 'input' =  `, input);
+        var results = gT.findWords(numericInput, gT.dictionaryTree, true);
         return results;
     };
 
-t9.findWords = function(sequence, tree, exact, words, currentWord, depth) {
+/**
+ * find possible words based on input digits
+ * @param  {string}  sequence    input digits
+ * @param  {object}  tree        tree or node
+ * @param  {boolean} exact     exact matches or not
+ * @param  {array}   words       current array of possible intented words
+ * @param  {string}   currentWord [description]
+ * @param  {integer}   depth       [description]
+ * @return {array}            array of all possible intended words
+ */
+gT.findWords = (sequence, tree, exact, words, currentWord, depth) => {
+    console.log(`\n\ngT.findWords() called!`);
 
     var current = tree;
+    console.log(`current =`, current);
 
     sequence = sequence.toString();
     words = words || [];
@@ -121,7 +145,7 @@ t9.findWords = function(sequence, tree, exact, words, currentWord, depth) {
         } else {
             key = sequence.charAt(depth);
             word += leaf;
-            if (depth >= (sequence.length - 1) && typeof(value) === 'number' && key && (t9.keyMap[key].indexOf(leaf) > -1)) {
+            if (depth >= (sequence.length - 1) && typeof(value) === 'number' && key && (gT.keyMap[key].indexOf(leaf) > -1)) {
                 words.push(word);
             }
         }
@@ -130,8 +154,8 @@ t9.findWords = function(sequence, tree, exact, words, currentWord, depth) {
         // the prefix to the end of the tree (`exact` is falsy), then
         // "we must go deeper"...
 
-        if ((key && t9.keyMap.hasOwnProperty(key) && t9.keyMap[key].indexOf(leaf) > -1) || (!key && !exact)) {
-            t9.findWords(sequence, value, exact, words, word, depth + 1);
+        if ((key && gT.keyMap.hasOwnProperty(key) && gT.keyMap[key].indexOf(leaf) > -1) || (!key && !exact)) {
+            gT.findWords(sequence, value, exact, words, word, depth + 1);
         }
     }
 
@@ -141,45 +165,20 @@ t9.findWords = function(sequence, tree, exact, words, currentWord, depth) {
       // breaking the leaf loop
       return words;
 };
+// console.log('gT = ', gT);
+
+};
+
 
 // Start here
-// const input = fs.createReadStream('../data/dictionary.txt');
-// readLines(input, func);
 const wordsString = fs.readFileSync(dictFile, 'utf-8');
-wordsArrayInput = wordsString.split(/\s+/g);
-// console.log(`input is of type: `, typeof input);
-buildTree(wordsArrayInput);
-// console.log(`t9 = `, t9);
+buildTree(wordsString);
 
-exports.listTopics = (req,res) => {
-  Topic.find() // find is method of mongoose
-  .then((topics) => {
-    console.log(topics);
-    //insted of res.send, we are sending json data
-    res.json(topics);
-  });
+exports.predictWord = (req, res) => {
+  // res.setHeader("Content-Type", "text/html");
+  // console.log('req = ', req, '.   res = ', res);
+  console.log(`req.params.numString = `, req.params.numString);
+  let wordSuggestionArray = gT.predict(req.params.numString);
+  console.log(`wordSuggestionArray =`, wordSuggestionArray);
+  res.json(wordSuggestionArray);
 }
-
-exports.addTopic = (req,res) => {
-  if(!req.body) return res.status(400).json({  // json sends
-    error: 'no body sent'
-  });
-  Topic.create({
-    title: req.body.title,
-  })
-  .then(topic => {
-    res.json(topic);
-  })
-}
-
-// we started with this shit:
-// exports.listTopics = (req,res) => {
-//   res.send('GET /topics')};
-// exports.addTopic = (req,res) => {
-//   res.send('POST /topics')};
-// exports.deleteTopic = (req,res) => {
-//   res.send('DELETE /topics/:id')};
-// exports.voteUp = (req,res) => {
-//   res.send('PUT /topics/:id')};
-// exports.voteDown = (req,res) => {
-//   res.send('PUT /topics/:id')};
